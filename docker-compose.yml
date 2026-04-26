@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ml-tracker-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./experiments.db
+      - API_CORS_ORIGINS=["http://localhost:3000", "http://127.0.0.1:3000"]
+    volumes:
+      - ./backend:/app
+      - ml_tracker_db:/app/db
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - ml-tracker
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ml-tracker-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm start
+    depends_on:
+      - backend
+    networks:
+      - ml-tracker
+
+volumes:
+  ml_tracker_db:
+
+networks:
+  ml-tracker:
+    driver: bridge
